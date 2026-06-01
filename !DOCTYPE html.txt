@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digital Performance Report</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f8f7f4;--surface:#fff;--surface2:#f2f1ee;
+  --border:rgba(0,0,0,0.08);--border-strong:rgba(0,0,0,0.14);
+  --text:#1a1916;--muted:#6b6a66;--hint:#9e9d99;
+  --up:#1a7f4e;--up-bg:#e8f7ef;--down:#c0392b;--down-bg:#fdecea;
+  --fb:#1877F2;--ig:#dc2743;--meta:#0668E1;--gg:#4285F4;
+  --r:12px;--rs:8px;
+}
+body{font-family:-apple-system,'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh}
+.page{max-width:1100px;margin:0 auto;padding:2rem 1.5rem 4rem}
+.header{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--hint);margin-bottom:4px}
+h1{font-size:26px;font-weight:700;letter-spacing:-.5px}
+.meta-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.pill{font-size:11px;font-weight:500;padding:4px 10px;border-radius:20px;border:1px solid var(--border-strong);color:var(--muted);background:var(--surface)}
+.pill-live{background:#e8f7ef;color:#1a7f4e;border-color:#a8dfc2}
+.platforms{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1.5rem}
+.pp{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;color:#fff}
+.divider{height:1px;background:var(--border);margin:1.5rem 0}
+.slabel{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--hint);margin-bottom:1rem}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:1.5rem}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem 1.1rem;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r) var(--r) 0 0;background:linear-gradient(90deg,var(--fb),var(--ig),var(--gg))}
+.kpi-label{font-size:11px;color:var(--hint);font-weight:500;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.kpi-value{font-size:22px;font-weight:700;letter-spacing:-.5px;margin-bottom:6px}
+.kpi-footer{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.badge{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px}
+.badge.up{background:var(--up-bg);color:var(--up)}
+.badge.down{background:var(--down-bg);color:var(--down)}
+.kpi-prev{font-size:11px;color:var(--hint)}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.5rem}
+@media(max-width:720px){.charts-grid{grid-template-columns:1fr}}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem}
+.chart-card.wide{grid-column:1/-1}
+.chart-title{font-size:13px;font-weight:600;margin-bottom:3px}
+.chart-sub{font-size:12px;color:var(--hint);margin-bottom:12px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+.leg{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)}
+.leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.chart-wrap{position:relative;width:100%}
+.table-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:1.5rem;overflow:hidden}
+.table-head{padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.table-head h3{font-size:14px;font-weight:600}
+.tabs{display:flex;gap:6px}
+.tab{font-size:12px;padding:4px 12px;border-radius:6px;border:1px solid var(--border-strong);background:transparent;color:var(--muted);cursor:pointer;font-weight:500;transition:all .15s}
+.tab.active{background:var(--text);color:#fff;border-color:var(--text)}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:680px}
+thead tr{border-bottom:1px solid var(--border-strong)}
+th{padding:9px 12px;text-align:right;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--hint);white-space:nowrap}
+th:first-child{text-align:left}
+th.cur{color:var(--text)}
+th.chg{font-size:10px;color:var(--text)}
+tbody tr{border-bottom:1px solid var(--border)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--bg)}
+td{padding:10px 12px;text-align:right;white-space:nowrap}
+td:first-child{text-align:left;font-weight:600}
+.pname{display:flex;align-items:center;gap:8px}
+.pdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+td.prev{color:var(--hint)}
+td.curr{font-weight:700}
+.chg-badge{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px}
+.chg-badge.up{background:var(--up-bg);color:var(--up)}
+.chg-badge.down{background:var(--down-bg);color:var(--down)}
+.budget-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.25rem;margin-bottom:1.5rem}
+.bbar{display:flex;height:30px;border-radius:8px;overflow:hidden;gap:2px;margin-bottom:12px}
+.bseg{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:rgba(255,255,255,.9)}
+.blegend{display:flex;flex-wrap:wrap;gap:16px;margin-top:8px}
+.bitem{display:flex;flex-direction:column;gap:2px}
+.bitem-label{font-size:11px;color:var(--hint);display:flex;align-items:center;gap:5px}
+.bitem-val{font-size:14px;font-weight:700}
+.bitem-chg{font-size:11px;font-weight:600}
+.bitem-chg.up{color:var(--up)}
+.bitem-chg.down{color:var(--down)}
+.insight-card{background:#fffbf0;border:1px solid #f0d97a;border-radius:var(--r);padding:1.25rem;margin-bottom:1.5rem}
+.insight-title{font-size:13px;font-weight:700;color:#7a5c00;margin-bottom:12px}
+.insight-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.insight-list li{font-size:13px;color:#5a4200;padding-left:18px;position:relative;line-height:1.6}
+.insight-list li::before{content:'→';position:absolute;left:0;color:#c8960a;font-weight:700}
+.footer{border-top:1px solid var(--border);padding-top:1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.footer p,.footer span{font-size:12px;color:var(--hint)}
+.data-note{background:#edf4ff;border:1px solid #b5d4f4;border-radius:var(--rs);padding:10px 14px;font-size:12px;color:#185fa5;margin-bottom:1.5rem;display:flex;gap:8px;align-items:flex-start}
+.data-note code{background:#fff;border:1px solid #b5d4f4;border-radius:4px;padding:1px 5px;font-size:11px}
+@media print{body{background:#fff}.page{padding:1rem}.chart-card,.kpi,.table-card,.budget-card,.insight-card{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ============================================================
+     == SỐ LIỆU — CHỈNH TẠI ĐÂY ==
+     Đơn vị: reach/imp = triệu (M), ctr = %, roas = lần (x),
+             conv = lượt, spend = triệu đồng
+     weekly_ctr = CTR từng tuần (W1..W4), 8 tuần liên tiếp T4→T5
+============================================================ -->
+<script>
+const DATA = {
+  tenThang4: "Tháng 4/2025",
+  tenThang5: "Tháng 5/2025",
+  mucTieuRoas: 3.5,
+
+  thang4: {
+    facebook : { reach: 1.25, imp: 5.31, ctr: 1.38, roas: 3.51, conv: 688,  spend: 24.8 },
+    instagram: { reach: 0.91, imp: 3.98, ctr: 1.47, roas: 3.72, conv: 620,  spend: 19.7 },
+    meta     : { reach: 0.89, imp: 3.88, ctr: 1.31, roas: 3.28, conv: 498,  spend: 17.6 },
+    google   : { reach: 0.72, imp: 4.13, ctr: 1.32, roas: 3.26, conv: 598,  spend: 18.7 }
+  },
+
+  thang5: {
+    facebook : { reach: 1.38, imp: 5.80, ctr: 1.70, roas: 3.90, conv: 812,  spend: 26.2 },
+    instagram: { reach: 1.05, imp: 4.50, ctr: 1.80, roas: 4.20, conv: 736,  spend: 20.8 },
+    meta     : { reach: 0.97, imp: 4.12, ctr: 1.50, roas: 3.62, conv: 584,  spend: 18.1 },
+    google   : { reach: 0.80, imp: 4.28, ctr: 1.65, roas: 3.64, conv: 709,  spend: 19.4 }
+  },
+
+  weekly_ctr: {
+    labels  : ["T4-W1","T4-W2","T4-W3","T4-W4","T5-W1","T5-W2","T5-W3","T5-W4"],
+    facebook : [1.28,1.33,1.40,1.38,1.45,1.62,1.70,1.83],
+    instagram: [1.38,1.44,1.48,1.47,1.60,1.75,1.82,1.95],
+    meta     : [1.22,1.28,1.30,1.31,1.35,1.42,1.55,1.68],
+    google   : [1.25,1.29,1.33,1.32,1.50,1.58,1.65,1.72]
+  }
+};
+</script>
+<!-- ============================================================
+     == HẾT PHẦN SỐ LIỆU — KHÔNG CẦN SỬA BÊN DƯỚI ==
+============================================================ -->
+
+<div class="data-note">
+  <span>✏️</span>
+  <span>Để cập nhật số liệu: mở file bằng Notepad / VS Code → tìm dòng <code>== SỐ LIỆU — CHỈNH TẠI ĐÂY ==</code> → sửa các con số trong object <code>DATA</code> → lưu → F5 trình duyệt.</span>
+</div>
+
+<div class="header">
+  <div>
+    <p class="eyebrow">Digital Performance Report</p>
+    <h1 id="h-title">—</h1>
+    <div class="meta-row">
+      <span class="pill" id="h-range">—</span>
+      <span class="pill pill-live">● Đã hoàn thành</span>
+      <span class="pill" id="h-compare">—</span>
+    </div>
+  </div>
+</div>
+
+<div class="platforms">
+  <span class="pp" style="background:#1877F2;">Facebook</span>
+  <span class="pp" style="background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);">Instagram</span>
+  <span class="pp" style="background:#0668E1;">Meta Ads</span>
+  <span class="pp" style="background:#4285F4;">Google Ads</span>
+</div>
+
+<div class="divider"></div>
+<p class="slabel" id="kpi-label">—</p>
+<div class="kpi-grid" id="kpi-grid"></div>
+
+<div class="divider"></div>
+<p class="slabel">Biểu đồ hiệu suất</p>
+<div class="charts-grid">
+  <div class="chart-card">
+    <div class="chart-title">Impressions theo kênh</div>
+    <div class="chart-sub" id="sub-imp">—</div>
+    <div class="legend"><span class="leg"><span class="leg-dot" style="background:#c8c5be;"></span><span id="leg-prev-1">—</span></span><span class="leg"><span class="leg-dot" style="background:#1a1916;"></span><span id="leg-curr-1">—</span></span></div>
+    <div class="chart-wrap" style="height:220px;"><canvas id="impChart" role="img" aria-label="So sánh impressions theo kênh"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">CTR theo kênh (%)</div>
+    <div class="chart-sub" id="sub-ctr">—</div>
+    <div class="legend"><span class="leg"><span class="leg-dot" style="background:#c8c5be;"></span><span id="leg-prev-2">—</span></span><span class="leg"><span class="leg-dot" style="background:#1a1916;"></span><span id="leg-curr-2">—</span></span></div>
+    <div class="chart-wrap" style="height:220px;"><canvas id="ctrChart" role="img" aria-label="So sánh CTR theo kênh"></canvas></div>
+  </div>
+  <div class="chart-card wide">
+    <div class="chart-title">Xu hướng CTR theo tuần (%)</div>
+    <div class="chart-sub">Diễn biến 8 tuần liên tiếp</div>
+    <div class="legend">
+      <span class="leg"><span class="leg-dot" style="background:#1877F2;"></span>Facebook</span>
+      <span class="leg"><span class="leg-dot" style="background:#dc2743;"></span>Instagram</span>
+      <span class="leg"><span class="leg-dot" style="background:#0668E1;border-top:2px dashed #0668E1;height:0;width:18px;"></span>Meta Ads</span>
+      <span class="leg"><span class="leg-dot" style="background:#4285F4;"></span>Google Ads</span>
+    </div>
+    <div class="chart-wrap" style="height:220px;"><canvas id="trendChart" role="img" aria-label="Xu hướng CTR 8 tuần"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">ROAS theo kênh</div>
+    <div class="chart-sub" id="sub-roas">—</div>
+    <div class="legend"><span class="leg"><span class="leg-dot" style="background:#c8c5be;"></span><span id="leg-prev-3">—</span></span><span class="leg"><span class="leg-dot" style="background:#1a1916;"></span><span id="leg-curr-3">—</span></span></div>
+    <div class="chart-wrap" style="height:220px;"><canvas id="roasChart" role="img" aria-label="So sánh ROAS theo kênh"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Conversions theo kênh</div>
+    <div class="chart-sub" id="sub-conv">—</div>
+    <div class="legend"><span class="leg"><span class="leg-dot" style="background:#c8c5be;"></span><span id="leg-prev-4">—</span></span><span class="leg"><span class="leg-dot" style="background:#1a1916;"></span><span id="leg-curr-4">—</span></span></div>
+    <div class="chart-wrap" style="height:220px;"><canvas id="convChart" role="img" aria-label="So sánh conversions theo kênh"></canvas></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<div class="table-card">
+  <div class="table-head">
+    <h3 id="table-title">—</h3>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+      <span style="font-size:12px;color:var(--hint);">Chỉ số:</span>
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('all',this)">Tất cả</button>
+        <button class="tab" onclick="switchTab('traffic',this)">Traffic</button>
+        <button class="tab" onclick="switchTab('ads',this)">Ads</button>
+      </div>
+    </div>
+  </div>
+  <div class="tbl-wrap">
+    <table id="compTable">
+      <thead><tr id="thead-row"></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="budget-card">
+  <p class="slabel" style="margin-bottom:1rem;">Phân bổ ngân sách</p>
+  <div class="bbar" id="bbar"></div>
+  <div class="blegend" id="blegend"></div>
+</div>
+
+<div class="insight-card">
+  <div class="insight-title">💡 Nhận xét &amp; Khuyến nghị</div>
+  <ul class="insight-list" id="insights"></ul>
+</div>
+
+<div class="footer">
+  <p>Số liệu được tính tự động từ object DATA trong file. Kỳ so sánh: <span id="ft-prev">—</span>.</p>
+  <span id="ft-title">—</span>
+</div>
+
+</div><!-- .page -->
+
+<script>
+const D = DATA;
+const PLT = ['facebook','instagram','meta','google'];
+const PLT_LABEL = ['Facebook','Instagram','Meta Ads','Google Ads'];
+const PLT_COLOR = ['#1877F2','#dc2743','#0668E1','#4285F4'];
+const PREV_COLOR = '#c8c5be';
+const DARK_COLOR = '#1a1916';
+
+function pct(curr, prev) {
+  const d = ((curr - prev) / prev * 100);
+  return (d >= 0 ? '+' : '') + d.toFixed(1) + '%';
+}
+function pp(curr, prev) {
+  const d = curr - prev;
+  return (d >= 0 ? '+' : '') + d.toFixed(2) + 'pp';
+}
+function xDiff(curr, prev) {
+  const d = curr - prev;
+  return (d >= 0 ? '+' : '') + d.toFixed(2) + 'x';
+}
+function isUp(curr, prev) { return curr >= prev; }
+
+// Header
+document.getElementById('h-title').textContent = D.tenThang5;
+document.getElementById('h-range').textContent = '01 → 31 ' + D.tenThang5.split('/')[1]?.replace('20','/20') || D.tenThang5;
+document.getElementById('h-compare').textContent = 'So sánh: ' + D.tenThang4;
+document.getElementById('kpi-label').textContent = 'Tổng quan — ' + D.tenThang5 + ' vs ' + D.tenThang4;
+document.getElementById('table-title').textContent = 'So sánh chi tiết: ' + D.tenThang4 + ' → ' + D.tenThang5;
+document.getElementById('ft-prev').textContent = D.tenThang4;
+document.getElementById('ft-title').textContent = 'Digital Performance Report · ' + D.tenThang5;
+['sub-imp','sub-ctr','sub-roas','sub-conv'].forEach(id => {
+  document.getElementById(id).textContent = D.tenThang4 + ' vs ' + D.tenThang5;
+});
+['leg-prev-1','leg-prev-2','leg-prev-3','leg-prev-4'].forEach(id => {
+  document.getElementById(id).textContent = D.tenThang4;
+});
+['leg-curr-1','leg-curr-2','leg-curr-3','leg-curr-4'].forEach(id => {
+  document.getElementById(id).textContent = D.tenThang5;
+});
+
+// Totals
+function sum(field, month) {
+  return PLT.reduce((a,p) => a + D[month][p][field], 0);
+}
+const t4 = D.thang4, t5 = D.thang5;
+const totalReach4 = sum('reach','thang4'), totalReach5 = sum('reach','thang5');
+const totalImp4 = sum('imp','thang4'), totalImp5 = sum('imp','thang5');
+const totalClicks4 = PLT.reduce((a,p) => a + D.thang4[p].imp * D.thang4[p].ctr / 100, 0);
+const totalClicks5 = PLT.reduce((a,p) => a + D.thang5[p].imp * D.thang5[p].ctr / 100, 0);
+const totalSpend4 = sum('spend','thang4'), totalSpend5 = sum('spend','thang5');
+const avgCtr4 = PLT.reduce((a,p) => a + D.thang4[p].ctr, 0) / 4;
+const avgCtr5 = PLT.reduce((a,p) => a + D.thang5[p].ctr, 0) / 4;
+const avgCpc4 = (totalSpend4 * 1000000) / (totalClicks4 * 1000);
+const avgCpc5 = (totalSpend5 * 1000000) / (totalClicks5 * 1000);
+const totalConv4 = sum('conv','thang4'), totalConv5 = sum('conv','thang5');
+const avgRoas4 = PLT.reduce((a,p) => a + D.thang4[p].roas, 0) / 4;
+const avgRoas5 = PLT.reduce((a,p) => a + D.thang5[p].roas, 0) / 4;
+
+const KPIS = [
+  { label:'Tổng Reach', val5: totalReach5.toFixed(2)+'M', val4: totalReach4.toFixed(2)+'M', diff: pct(totalReach5,totalReach4), up: isUp(totalReach5,totalReach4) },
+  { label:'Tổng Impressions', val5: totalImp5.toFixed(2)+'M', val4: totalImp4.toFixed(2)+'M', diff: pct(totalImp5,totalImp4), up: isUp(totalImp5,totalImp4) },
+  { label:'Tổng Clicks', val5: (totalClicks5).toFixed(1)+'K', val4: (totalClicks4).toFixed(1)+'K', diff: pct(totalClicks5,totalClicks4), up: isUp(totalClicks5,totalClicks4) },
+  { label:'Tổng Chi phí', val5: totalSpend5.toFixed(1)+'M₫', val4: totalSpend4.toFixed(1)+'M₫', diff: pct(totalSpend5,totalSpend4), up: false },
+  { label:'Avg. CTR', val5: avgCtr5.toFixed(2)+'%', val4: avgCtr4.toFixed(2)+'%', diff: pp(avgCtr5,avgCtr4), up: isUp(avgCtr5,avgCtr4) },
+  { label:'Avg. CPC (₫)', val5: Math.round(avgCpc5)+'₫', val4: Math.round(avgCpc4)+'₫', diff: pct(avgCpc5,avgCpc4), up: !isUp(avgCpc5,avgCpc4) },
+  { label:'Conversions', val5: totalConv5.toLocaleString(), val4: totalConv4.toLocaleString(), diff: pct(totalConv5,totalConv4), up: isUp(totalConv5,totalConv4) },
+  { label:'Avg. ROAS', val5: avgRoas5.toFixed(2)+'x', val4: avgRoas4.toFixed(2)+'x', diff: xDiff(avgRoas5,avgRoas4), up: isUp(avgRoas5,avgRoas4) },
+];
+const grid = document.getElementById('kpi-grid');
+KPIS.forEach(k => {
+  grid.innerHTML += `<div class="kpi"><div class="kpi-label">${k.label}</div><div class="kpi-value">${k.val5}</div><div class="kpi-footer"><span class="badge ${k.up?'up':'down'}">${k.up?'▲':'▼'} ${k.diff}</span><span class="kpi-prev">T4: ${k.val4}</span></div></div>`;
+});
+
+// Chart helpers
+function grouped(prev, curr) {
+  return {
+    labels: PLT_LABEL,
+    datasets: [
+      { label: D.tenThang4, data: prev, backgroundColor: PREV_COLOR, borderRadius: 3, borderSkipped: false },
+      { label: D.tenThang5, data: curr, backgroundColor: PLT_COLOR, borderRadius: 3, borderSkipped: false }
+    ]
+  };
+}
+function barOpts(cb) {
+  return { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+    scales:{ y:{beginAtZero:true,ticks:{callback:cb,font:{size:11},color:'#9e9d99'},grid:{color:'rgba(0,0,0,0.06)'},border:{display:false}}, x:{ticks:{font:{size:11},color:'#9e9d99'},grid:{display:false},border:{display:false}} } };
+}
+
+new Chart(document.getElementById('impChart'), { type:'bar', data: grouped(PLT.map(p=>D.thang4[p].imp), PLT.map(p=>D.thang5[p].imp)), options: barOpts(v=>v.toFixed(1)+'M') });
+new Chart(document.getElementById('ctrChart'), { type:'bar', data: grouped(PLT.map(p=>D.thang4[p].ctr), PLT.map(p=>D.thang5[p].ctr)), options: barOpts(v=>v.toFixed(2)+'%') });
+new Chart(document.getElementById('roasChart'), { type:'bar', data: grouped(PLT.map(p=>D.thang4[p].roas), PLT.map(p=>D.thang5[p].roas)), options: { ...barOpts(v=>v.toFixed(1)+'x'), scales:{ y:{min:2,ticks:{callback:v=>v.toFixed(1)+'x',font:{size:11},color:'#9e9d99'},grid:{color:'rgba(0,0,0,0.06)'},border:{display:false}}, x:{ticks:{font:{size:11},color:'#9e9d99'},grid:{display:false},border:{display:false}} } } });
+new Chart(document.getElementById('convChart'), { type:'bar', data: grouped(PLT.map(p=>D.thang4[p].conv), PLT.map(p=>D.thang5[p].conv)), options: barOpts(v=>Math.round(v)) });
+
+new Chart(document.getElementById('trendChart'), {
+  type:'line',
+  data:{
+    labels: D.weekly_ctr.labels,
+    datasets:[
+      {label:'Facebook',  data:D.weekly_ctr.facebook,  borderColor:'#1877F2',backgroundColor:'transparent',tension:.4,pointRadius:4,borderDash:[],borderWidth:2},
+      {label:'Instagram', data:D.weekly_ctr.instagram, borderColor:'#dc2743',backgroundColor:'transparent',tension:.4,pointRadius:4,borderDash:[],borderWidth:2},
+      {label:'Meta Ads',  data:D.weekly_ctr.meta,      borderColor:'#0668E1',backgroundColor:'transparent',tension:.4,pointRadius:4,borderDash:[5,4],borderWidth:2},
+      {label:'Google Ads',data:D.weekly_ctr.google,    borderColor:'#4285F4',backgroundColor:'transparent',tension:.4,pointRadius:4,borderDash:[],borderWidth:2}
+    ]
+  },
+  options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}}, scales:{ y:{ticks:{callback:v=>v.toFixed(2)+'%',font:{size:11},color:'#9e9d99'},grid:{color:'rgba(0,0,0,0.06)'},border:{display:false}}, x:{ticks:{font:{size:11},color:'#9e9d99'},grid:{color:'rgba(0,0,0,0.04)'},border:{display:false}} } }
+});
+
+// Comparison table
+const theadRow = document.getElementById('thead-row');
+const metrics = [
+  {key:'reach',label:'Reach',fmt:v=>v.toFixed(2)+'M',diffFn:pct,upFn:isUp,dataGroup:'traffic'},
+  {key:'imp',  label:'Imp.',  fmt:v=>v.toFixed(2)+'M',diffFn:pct,upFn:isUp,dataGroup:'traffic'},
+  {key:'ctr',  label:'CTR',   fmt:v=>v.toFixed(2)+'%',diffFn:pp, upFn:isUp,dataGroup:'traffic'},
+  {key:'roas', label:'ROAS',  fmt:v=>v.toFixed(2)+'x',diffFn:xDiff,upFn:isUp,dataGroup:'ads'},
+  {key:'conv', label:'Conv.', fmt:v=>v.toLocaleString(),diffFn:pct,upFn:isUp,dataGroup:'ads'},
+  {key:'spend',label:'Spend', fmt:v=>v.toFixed(1)+'M₫',diffFn:pct,upFn:(c,p)=>!isUp(c,p),dataGroup:'ads'},
+];
+theadRow.innerHTML = `<th>Kênh</th>` + metrics.map(m=>`<th class="month-col prev-h">${D.tenThang4.split('/')[0]} ${m.label}</th><th class="month-col cur">${D.tenThang5.split('/')[0]} ${m.label}</th><th class="chg">Δ ${m.label}</th>`).join('');
+
+const tbody = document.getElementById('tbody');
+PLT.forEach((p,i) => {
+  const cells = metrics.map(m => {
+    const v4 = D.thang4[p][m.key], v5 = D.thang5[p][m.key];
+    const d = m.diffFn(v5,v4), up = m.upFn(v5,v4);
+    return `<td class="prev">${m.fmt(v4)}</td><td class="curr">${m.fmt(v5)}</td><td><span class="chg-badge ${up?'up':'down'}">${up?'▲':'▼'} ${d}</span></td>`;
+  }).join('');
+  tbody.innerHTML += `<tr><td><div class="pname"><span class="pdot" style="background:${PLT_COLOR[i]};"></span>${PLT_LABEL[i]}</div></td>${cells}</tr>`;
+});
+
+function switchTab(type, btn) {
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const table = document.getElementById('compTable');
+  table.querySelectorAll('tr').forEach(row => {
+    Array.from(row.cells).forEach((cell, idx) => {
+      if (idx === 0) { cell.style.display=''; return; }
+      const colIdx = idx - 1;
+      const metricIdx = Math.floor(colIdx / 3);
+      const group = metrics[metricIdx]?.dataGroup;
+      if (type === 'all') cell.style.display = '';
+      else if (type === 'traffic') cell.style.display = group === 'traffic' ? '' : 'none';
+      else cell.style.display = group === 'ads' ? '' : 'none';
+    });
+  });
+}
+
+// Budget bar
+const totalSpend5All = sum('spend','thang5');
+const bbar = document.getElementById('bbar'), blegend = document.getElementById('blegend');
+const spendPrev = PLT.map(p => D.thang4[p].spend);
+PLT.forEach((p,i) => {
+  const pct5 = Math.round(D.thang5[p].spend / totalSpend5All * 100);
+  bbar.innerHTML += `<div class="bseg" style="width:${pct5}%;background:${PLT_COLOR[i]};">${pct5}%</div>`;
+  const diff = D.thang5[p].spend - D.thang4[p].spend;
+  const up = diff >= 0;
+  blegend.innerHTML += `<div class="bitem"><div class="bitem-label"><span style="width:10px;height:10px;border-radius:50%;background:${PLT_COLOR[i]};display:inline-block;"></span>${PLT_LABEL[i]}</div><div class="bitem-val">${D.thang5[p].spend.toFixed(1)}M₫</div><div class="bitem-chg ${up?'up':'down'}">${up?'▲':'▼'} ${up?'+':''}${diff.toFixed(1)}M₫ vs ${D.tenThang4.split('/')[0]}</div></div>`;
+});
+
+// Insights — tự động từ data
+const insights = document.getElementById('insights');
+const sorted = [...PLT].sort((a,b) => D.thang5[b].roas - D.thang5[a].roas);
+const best = PLT_LABEL[PLT.indexOf(sorted[0])];
+const worst = PLT_LABEL[PLT.indexOf(sorted[sorted.length-1])];
+const bestRoas = D.thang5[sorted[0]].roas.toFixed(2);
+const worstRoas = D.thang5[sorted[sorted.length-1]].roas.toFixed(2);
+const roasOk = avgRoas5 >= D.mucTieuRoas;
+insights.innerHTML = `
+  <li><strong>${best}</strong> đạt ROAS cao nhất (${bestRoas}x) và CTR tốt nhất — nên cân nhắc tăng ngân sách tháng tới.</li>
+  <li><strong>${worst}</strong> có ROAS thấp nhất (${worstRoas}x) — cần review audience targeting và creative.</li>
+  <li>Tổng ROAS ${avgRoas5.toFixed(2)}x ${roasOk ? '✓ vượt' : '✗ chưa đạt'} mục tiêu ${D.mucTieuRoas}x.</li>
+  <li>Toàn bộ 4 kênh đều cải thiện so với ${D.tenThang4} — xu hướng tích cực.</li>
+`;
+</script>
+</body>
+</html>

@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ads Performance Report</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  /* =============================================
+     CONFIGURATION — EDIT COLORS & FONTS HERE
+  ============================================= */
+  :root {
+    --font-main: 'DM Sans', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+
+    --color-bg:        #F7F6F2;
+    --color-surface:   #FFFFFF;
+    --color-border:    rgba(0,0,0,0.08);
+    --color-text:      #1A1A18;
+    --color-muted:     #888780;
+    --color-google:    #185FA5;
+    --color-google-lt: #E6F1FB;
+    --color-meta:      #534AB7;
+    --color-meta-lt:   #EEEDFE;
+    --color-accent:    #D85A30;
+    --color-up:        #3B6D11;
+    --color-down:      #A32D2D;
+    --color-tag-bg:    #EAF3DE;
+    --color-tag-text:  #3B6D11;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+  }
+
+  /* =============================================
+     DATA — EDIT YOUR NUMBERS HERE
+  ============================================= */
+
+  /* All chart + summary card data is driven by the JS DATA object below.
+     Find the section marked  ===== EDIT DATA HERE =====  in the <script>  */
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-main);
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+    padding: 2.5rem 1.5rem 4rem;
+  }
+
+  .page-header {
+    max-width: 960px;
+    margin: 0 auto 2.5rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .page-title { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; }
+  .page-subtitle { font-size: 13px; color: var(--color-muted); margin-top: 2px; }
+  .period-badge {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-muted);
+  }
+
+  .container { max-width: 960px; margin: 0 auto; }
+
+  /* Section */
+  .section { background: var(--color-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-border); padding: 1.5rem; margin-bottom: 1.25rem; }
+  .section-head { display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem; }
+  .ch-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+  .ch-google { background: var(--color-google-lt); }
+  .ch-meta   { background: var(--color-meta-lt); }
+  .section-name { font-size: 15px; font-weight: 600; }
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .tag-google { background: var(--color-google-lt); color: var(--color-google); }
+  .tag-meta   { background: var(--color-meta-lt);   color: var(--color-meta); }
+  .tag-status { background: var(--color-tag-bg);    color: var(--color-tag-text); }
+
+  /* Metric cards */
+  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 1.25rem; }
+  .mc { background: var(--color-bg); border-radius: var(--radius-md); padding: 14px 16px; }
+  .mc-label { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--color-muted); margin-bottom: 6px; }
+  .mc-value { font-size: 20px; font-weight: 600; }
+  .mc-change { font-size: 11px; margin-top: 4px; display: flex; align-items: center; gap: 3px; }
+  .up   { color: var(--color-up); }
+  .down { color: var(--color-down); }
+  .neutral { color: var(--color-muted); }
+
+  /* Table */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; padding: 7px 10px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--color-muted); border-bottom: 1px solid var(--color-border); white-space: nowrap; }
+  td { padding: 9px 10px; border-bottom: 1px solid var(--color-border); white-space: nowrap; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr.prev-month td { color: var(--color-muted); background: #FAFAF8; }
+  .sb { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 10px; font-weight: 500; }
+  .sb-run { background: var(--color-tag-bg); color: var(--color-tag-text); }
+  .sb-obj { background: #F1F0E8; color: var(--color-muted); }
+  .cv { color: var(--color-accent); font-weight: 600; }
+  .mo { font-family: var(--font-mono); font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #F1F0E8; color: var(--color-muted); }
+
+  /* Charts */
+  .charts-section { background: var(--color-surface); border-radius: var(--radius-lg); border: 1px solid var(--color-border); padding: 1.5rem; margin-bottom: 1.25rem; }
+  .charts-section-title { font-size: 13px; font-weight: 600; color: var(--color-text); margin-bottom: 1rem; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 1rem; font-size: 12px; color: var(--color-muted); }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .leg-sq { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .chart-block .chart-label { font-size: 12px; font-weight: 500; color: var(--color-muted); margin-bottom: 8px; }
+  .chart-block .chart-wrap { position: relative; height: 180px; width: 100%; }
+  @media (max-width: 600px) { .charts-grid { grid-template-columns: 1fr; } }
+
+  .divider { height: 1px; background: var(--color-border); margin: 1.5rem 0; }
+
+  .footer { text-align: center; font-size: 11px; color: var(--color-muted); margin-top: 2rem; }
+  .footer span { font-family: var(--font-mono); }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div>
+    <div class="page-title">Ads Performance Report</div>
+    <div class="page-subtitle">Google Ads &amp; Meta Ads — Month-over-Month Comparison</div>
+  </div>
+  <div class="period-badge">Apr → May 2026</div>
+</div>
+
+<div class="container">
+
+  <!-- ===== GOOGLE ADS ===== -->
+  <div class="section" id="google-section">
+    <div class="section-head">
+      <div class="ch-icon ch-google">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </div>
+      <span class="section-name">Google Ads</span>
+      <span class="tag tag-google">Month 5</span>
+      <span class="tag tag-status">Running</span>
+    </div>
+
+    <div class="metrics-grid" id="google-metrics"></div>
+
+    <div class="tbl-wrap">
+      <table id="google-table">
+        <thead>
+          <tr>
+            <th>Mo.</th><th>Campaign</th><th>Objective</th><th>Budget</th>
+            <th>Status</th><th>Impressions</th><th>Link Clicks</th>
+            <th>Conversion</th><th>Conv. Rate</th><th>Cost/Click</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== GOOGLE CHARTS ===== -->
+  <div class="charts-section">
+    <div class="charts-section-title">Month-over-month — Google Ads</div>
+    <div class="legend">
+      <span><span class="leg-sq" style="background:#378ADD"></span>April</span>
+      <span><span class="leg-sq" style="background:#185FA5"></span>May</span>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-block"><div class="chart-label">Impressions</div><div class="chart-wrap"><canvas id="g-imp" role="img" aria-label="Google Impressions MoM"></canvas></div></div>
+      <div class="chart-block"><div class="chart-label">Link Clicks</div><div class="chart-wrap"><canvas id="g-clk" role="img" aria-label="Google Clicks MoM"></canvas></div></div>
+      <div class="chart-block"><div class="chart-label">Conversions</div><div class="chart-wrap"><canvas id="g-conv" role="img" aria-label="Google Conversions MoM"></canvas></div></div>
+      <div class="chart-block"><div class="chart-label">Cost per Click (đ)</div><div class="chart-wrap"><canvas id="g-cpc" role="img" aria-label="Google CPC MoM"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- ===== META ADS ===== -->
+  <div class="section" id="meta-section">
+    <div class="section-head">
+      <div class="ch-icon ch-meta">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#534AB7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+      </div>
+      <span class="section-name">Meta Ads</span>
+      <span class="tag tag-meta">Month 5</span>
+      <span class="tag tag-status">Paused</span>
+    </div>
+
+    <div class="metrics-grid" id="meta-metrics"></div>
+
+    <div class="tbl-wrap">
+      <table id="meta-table">
+        <thead>
+          <tr>
+            <th>Mo.</th><th>Channel</th><th>Campaign</th><th>Objective</th>
+            <th>Status</th><th>Budget</th><th>Impressions</th>
+            <th>Link Clicks</th><th>Conversion</th><th>Cost/Click</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== META CHARTS ===== -->
+  <div class="charts-section">
+    <div class="charts-section-title">Month-over-month — Meta Ads</div>
+    <div class="legend">
+      <span><span class="leg-sq" style="background:#AFA9EC"></span>April</span>
+      <span><span class="leg-sq" style="background:#534AB7"></span>May</span>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-block"><div class="chart-label">Impressions</div><div class="chart-wrap"><canvas id="m-imp" role="img" aria-label="Meta Impressions MoM"></canvas></div></div>
+      <div class="chart-block"><div class="chart-label">Link Clicks</div><div class="chart-wrap"><canvas id="m-clk" role="img" aria-label="Meta Clicks MoM"></canvas></div></div>
+      <div class="chart-block"><div class="chart-label">Conversions (page views)</div><div class="chart-wrap"><canvas id="m-conv" role="img" aria-label="Meta Conversions MoM"></canvas></div></div>
+      <div class="chart-block"><div class="chart-label">Cost per Click (đ)</div><div class="chart-wrap"><canvas id="m-cpc" role="img" aria-label="Meta CPC MoM"></canvas></div></div>
+    </div>
+  </div>
+
+  <div class="footer">Generated · <span>ads_performance_report.html</span> · Update the DATA object in &lt;script&gt; to reflect real numbers</div>
+
+</div><!-- /container -->
+
+<script>
+/* ==========================================================
+   ===== EDIT DATA HERE =====
+   All numbers in this section drive the entire report.
+   Change values, save, and refresh the browser.
+========================================================== */
+
+const DATA = {
+
+  /* ---- GOOGLE ADS ---- */
+  google: {
+    campaigns: [
+      /* May (current month) */
+      {
+        month:       5,
+        name:        "Search campaign - 20260410",
+        objective:   "Booking",
+        budget:      "100,000đ/day - 200,000đ/day",
+        status:      "Running",
+        impressions: 14922,
+        clicks:      1592,
+        conversion:  "111 bookings",       /* text shown in Conversion column */
+        convValue:   184,                  /* numeric value for summary card */
+        convRate:    "6.97%",
+        cpc:         4391,                 /* cost per click in đ */
+        isPrev:      false
+      },
+      {
+        month:       5,
+        name:        "Performance Max - 20260417",
+        objective:   "Get Direction",
+        budget:      "100,000đ/day - 200,000đ/day",
+        status:      "Running",
+        impressions: 40533,
+        clicks:      1658,
+        conversion:  "960 website views",
+        convValue:   960,
+        convRate:    "57.9%",
+        cpc:         1834,
+        isPrev:      false
+      },
+      /* April (previous month — isPrev: true → shown in grey) */
+      {
+        month:       4,
+        name:        "Search campaign - 20260410",
+        objective:   "Booking",
+        budget:      "200,000đ/day",
+        status:      "Running",
+        impressions: 18456,
+        clicks:      1330,
+        conversion:  "101 bookings",
+        convValue:   101,
+        convRate:    "7.59%",
+        cpc:         3158,
+        isPrev:      true
+      },
+      {
+        month:       4,
+        name:        "Performance Max - 20260417",
+        objective:   "Get Direction",
+        budget:      "100,000đ/day",
+        status:      "Running",
+        impressions: 34422,
+        clicks:      901,
+        conversion:  "241 website views",
+        convValue:   257,
+        convRate:    "26.97%",
+        cpc:         1554,
+        isPrev:      true
+      }
+    ],
+
+    /* Summary cards — May totals vs April totals */
+    summary: {
+      may: { impressions: 55455, clicks: 3250, conversions: 1071,  avgCpc: 3086 },
+      apr: { impressions: 52878, clicks: 2231, conversions: 350,  avgCpc: 2510 },
+      budgetPerDay: "300,000đ",
+      campaigns:    2
+    }
+  },
+
+  /* ---- META ADS ---- */
+  meta: {
+    campaigns: [
+      /* May */
+      {
+        month:       5,
+        channel:     "Facebook",
+        name:        "LC Engagement Campaign Traffic _ 20260525",
+        objective:   "Post engagement",
+        status:      "Paused",
+        budget:      "30,000đ/day",
+        impressions: 18031,
+        clicks:      88,
+        conversion:  "12118",
+        convValue:   16,
+        cpc:         16,
+        isPrev:      false
+      },
+      /* May */
+      {
+        month:       5,
+        channel:     "Facebook",
+        name:        "LC Engagement Campaign_20260525",
+        objective:   "Profile and Page visits",
+        status:      "Paused",
+        budget:      "20,000đ/day",
+        impressions: 234,
+        clicks:      16,
+        conversion:  "19 Profile and Page visits",
+        convValue:   2288,
+        cpc:         711,
+        isPrev:      false
+      },
+      /* May */
+      {
+        month:       5,
+        channel:     "Facebook",
+        name:        "Traffic Campaign 20260414",
+        objective:   "Website view",
+        status:      "Paused",
+        budget:      "100,000đ/day",
+        impressions: 45136,
+        clicks:      3210,
+        conversion:  "2729 Website view",
+        convValue:   2288,
+        cpc:         666,
+        isPrev:      false
+      },
+      /* April */
+      {
+        month:       4,
+        channel:     "Facebook",
+        name:        "Traffic Campaign 20260414",
+        objective:   "Website view",
+        status:      "Paused",
+        budget:      "100,000đ/day",
+        impressions: 45179,
+        clicks:      2816,
+        conversion:  "2376 Website view",
+        convValue:   2288,
+        cpc:         697,
+        isPrev:      true
+      }
+    ],
+
+    /* Summary cards */
+    summary: {
+      may: { impressions: 63401, clicks: 3239, conversions: 14866, cpc: 642 },
+      apr: { impressions: 45179, clicks: 2816, conversions: 2376, cpc: 697 },
+      budgetPerDay: "100,000đ - 150,000đ",
+      campaigns:    3
+    }
+  }
+
+};
+
+/* ==========================================================
+   RENDER ENGINE — no need to edit below this line
+========================================================== */
+
+function pct(curr, prev) {
+  if (!prev) return null;
+  return ((curr - prev) / prev * 100).toFixed(1);
+}
+function changeEl(curr, prev, invert) {
+  const p = pct(curr, prev);
+  if (p === null) return '<span class="neutral">—</span>';
+  const up = invert ? parseFloat(p) < 0 : parseFloat(p) > 0;
+  const cls = parseFloat(p) === 0 ? 'neutral' : (up ? 'up' : 'down');
+  const arrow = parseFloat(p) === 0 ? '' : (up ? '▲' : '▼');
+  return `<span class="${cls}">${arrow} ${Math.abs(p)}% vs Apr</span>`;
+}
+function fmt(n) { return n.toLocaleString('en-US'); }
+
+/* Google summary cards */
+(function() {
+  const s = DATA.google.summary;
+  const cards = [
+    { label: 'Impressions',    value: fmt(s.may.impressions), change: changeEl(s.may.impressions, s.apr.impressions) },
+    { label: 'Link Clicks',    value: fmt(s.may.clicks),      change: changeEl(s.may.clicks,      s.apr.clicks) },
+    { label: 'Conversions',    value: fmt(s.may.conversions), change: changeEl(s.may.conversions, s.apr.conversions), accent: true },
+    { label: 'Avg. Conv. Rate',value: '17.2%',                change: '<span class="up">▲ vs Apr</span>' },
+    { label: 'Avg. Cost/Click',value: fmt(s.may.avgCpc) + 'đ',change: changeEl(s.may.avgCpc, s.apr.avgCpc, true) },
+    { label: 'Budget / day',   value: s.budgetPerDay,         change: `<span class="neutral">${s.campaigns} campaigns</span>` }
+  ];
+  document.getElementById('google-metrics').innerHTML = cards.map(c =>
+    `<div class="mc">
+      <div class="mc-label">${c.label}</div>
+      <div class="mc-value"${c.accent ? ' style="color:var(--color-accent)"':''}>${c.value}</div>
+      <div class="mc-change">${c.change}</div>
+    </div>`
+  ).join('');
+})();
+
+/* Google table */
+(function() {
+  const tbody = document.querySelector('#google-table tbody');
+  tbody.innerHTML = DATA.google.campaigns.map(c =>
+    `<tr${c.isPrev ? ' class="prev-month"' : ''}>
+      <td><span class="mo">${c.month}</span></td>
+      <td style="font-weight:${c.isPrev?'400':'600'}">${c.name}</td>
+      <td><span class="sb sb-obj">${c.objective}</span></td>
+      <td>${c.budget}</td>
+      <td><span class="sb sb-run">${c.status}</span></td>
+      <td>${fmt(c.impressions)}</td>
+      <td>${fmt(c.clicks)}</td>
+      <td class="${c.isPrev?'':'cv'}">${c.conversion}</td>
+      <td>${c.convRate}</td>
+      <td>${fmt(c.cpc)}đ</td>
+    </tr>`
+  ).join('');
+})();
+
+/* Meta summary cards */
+(function() {
+  const s = DATA.meta.summary;
+  const cards = [
+    { label: 'Impressions', value: fmt(s.may.impressions), change: changeEl(s.may.impressions, s.apr.impressions) },
+    { label: 'Link Clicks', value: fmt(s.may.clicks),      change: changeEl(s.may.clicks,      s.apr.clicks) },
+    { label: 'Conversions', value: fmt(s.may.conversions), change: changeEl(s.may.conversions, s.apr.conversions), accent: true },
+    { label: 'Cost/Click',  value: s.may.cpc + 'đ',        change: changeEl(s.may.cpc, s.apr.cpc, true) },
+    { label: 'Budget / day',value: s.budgetPerDay,          change: `<span class="neutral">${s.campaigns} campaign</span>` }
+  ];
+  document.getElementById('meta-metrics').innerHTML = cards.map(c =>
+    `<div class="mc">
+      <div class="mc-label">${c.label}</div>
+      <div class="mc-value"${c.accent ? ' style="color:var(--color-accent)"':''}>${c.value}</div>
+      <div class="mc-change">${c.change}</div>
+    </div>`
+  ).join('');
+})();
+
+/* Meta table */
+(function() {
+  const tbody = document.querySelector('#meta-table tbody');
+  tbody.innerHTML = DATA.meta.campaigns.map(c =>
+    `<tr${c.isPrev ? ' class="prev-month"' : ''}>
+      <td><span class="mo">${c.month}</span></td>
+      <td>${c.channel}</td>
+      <td style="font-weight:${c.isPrev?'400':'600'}">${c.name}</td>
+      <td><span class="sb sb-obj">${c.objective}</span></td>
+      <td><span class="sb sb-run">${c.status}</span></td>
+      <td>${c.budget}</td>
+      <td>${fmt(c.impressions)}</td>
+      <td>${fmt(c.clicks)}</td>
+      <td class="${c.isPrev?'':'cv'}">${c.conversion}</td>
+      <td>${fmt(c.cpc)}đ</td>
+    </tr>`
+  ).join('');
+})();
+
+/* Charts */
+function mkBar(id, aprVal, mayVal, colors, isCurrency) {
+  const fmtV = v => isCurrency ? v.toLocaleString('en-US') + 'đ' : v.toLocaleString('en-US');
+  new Chart(document.getElementById(id), {
+    type: 'bar',
+    data: {
+      labels: ['Apr', 'May'],
+      datasets: [{
+        data: [aprVal, mayVal],
+        backgroundColor: colors,
+        borderWidth: 0,
+        borderRadius: 5
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => fmtV(ctx.parsed.y) } }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#888780', font: { size: 11 } }, border: { display: false } },
+        y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#888780', font: { size: 11 }, callback: v => fmtV(v) }, border: { display: false } }
+      }
+    }
+  });
+}
+
+const gs = DATA.google.summary;
+mkBar('g-imp',  gs.apr.impressions,  gs.may.impressions,  ['#378ADD','#185FA5']);
+mkBar('g-clk',  gs.apr.clicks,       gs.may.clicks,       ['#378ADD','#185FA5']);
+mkBar('g-conv', gs.apr.conversions,  gs.may.conversions,  ['#378ADD','#185FA5']);
+mkBar('g-cpc',  gs.apr.avgCpc,       gs.may.avgCpc,       ['#378ADD','#185FA5'], true);
+
+const ms = DATA.meta.summary;
+mkBar('m-imp',  ms.apr.impressions,  ms.may.impressions,  ['#AFA9EC','#534AB7']);
+mkBar('m-clk',  ms.apr.clicks,       ms.may.clicks,       ['#AFA9EC','#534AB7']);
+mkBar('m-conv', ms.apr.conversions,  ms.may.conversions,  ['#AFA9EC','#534AB7']);
+mkBar('m-cpc',  ms.apr.cpc,          ms.may.cpc,          ['#AFA9EC','#534AB7'], true);
+</script>
+</body>
+</html>
